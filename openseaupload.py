@@ -6,6 +6,7 @@ import os
 import sys
 import pickle
 import time
+import csv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -20,6 +21,7 @@ input_save_list = ["NFTs folder :", 0, 0, 0, 0, 0, 0, 0, 0]
 main_directory = os.path.join(sys.path[0])
 is_polygon = BooleanVar()
 is_polygon.set(False)
+nftList = []
 
 def open_chrome_profile():
     subprocess.Popen(
@@ -43,6 +45,18 @@ def upload_folder_input():
 
 def Name_change_img_folder_button(upload_folder_input):
     upload_folder_input_button["text"] = upload_folder_input
+
+def read_files_list():
+    #with open('list.csv', 'r') as fd:
+    #    reader = csv.reader(fd)
+    #    for row in reader:
+    #        nftList.append(row)
+    nftListToReturn = []
+    text_file = open("list.csv", "r")
+    nftListToReturn = text_file.readlines()
+    #print(lines)
+    text_file.close()
+    return nftListToReturn
 
 class InputField:
     def __init__(self, label, row_io, column_io, pos, master=root):
@@ -105,6 +119,8 @@ def main_program_loop():
     loop_external_link = str(external_link.input_field.get())
     loop_description = description.input_field.get()
 
+    nftList = read_files_list()
+
     ##chromeoptions
     opt = Options()
     opt.add_experimental_option("debuggerAddress", "localhost:8989")
@@ -129,8 +145,10 @@ def main_program_loop():
         wait.until(ExpectedConditions.presence_of_element_located((By.XPATH, code)))
 
 
-    while end_num >= start_num:
-        print("Start creating NFT " +  loop_title + str(start_num))
+    i = 0
+    #while end_num >= start_num:
+    for nft in nftList:
+        print("Start creating NFT " +  nft)
         driver.get(collection_link)
         # time.sleep(3)
 
@@ -141,15 +159,27 @@ def main_program_loop():
 
         wait_xpath('//*[@id="media"]')
         imageUpload = driver.find_element_by_xpath('//*[@id="media"]')
-        imagePath = os.path.abspath(file_path + "\\" + str(start_num) + "." + loop_file_format)  # change folder here
+        #imagePath = os.path.abspath(file_path + "\\" + str(start_num) + "." + loop_file_format)  # change folder here
+        imagePath = os.path.abspath(file_path + "\\\\" + nft.rstrip())  # change folder here
+
+        print(imagePath)
+        #quit()
+
         imageUpload.send_keys(imagePath)
+        #imageUpload.send_keys('D:\picasso-green-003.svg')
+        time.sleep(0.5)
 
         name = driver.find_element_by_xpath('//*[@id="name"]')
-        name.send_keys(loop_title + str(start_num))  # +1000 for other folders #change name before "#"
+        #name.send_keys(loop_title + str(start_num))  # +1000 for other folders #change name before "#"
+        filename = nft.split('.')
+        nameParts = filename[0].split('-')
+        titleNft = nameParts[0].capitalize() + ' ' + nameParts[1] + ' #' + nameParts[2]
+
+        name.send_keys(titleNft)  # +1000 for other folders #change name before "#"
         time.sleep(0.5)
 
         ext_link = driver.find_element_by_xpath('//*[@id="external_link"]')
-        ext_link.send_keys(loop_external_link)
+        ext_link.send_keys(loop_external_link + '/' + filename[0])
         time.sleep(0.5)
 
         desc = driver.find_element_by_xpath('//*[@id="description"]')
@@ -167,50 +197,64 @@ def main_program_loop():
                 By.XPATH, polygon_button_location)
             polygon_button.click()
 
-        create = driver.find_element_by_xpath('//*[@id="__next"]/div[1]/main/div/div/section/div[2]/form/div/div[1]/span/button')
-        driver.execute_script("arguments[0].click();", create)
-        time.sleep(1)
+        unlockableContentButton = driver.find_element_by_xpath('//*[@id="unlockable-content-toggle"]')
+        #unlockableContentLabel = unlockableContentButton.find_element_by_xpath('./../..')
+        #unlockableContentLabel.click()
+        driver.execute_script("arguments[0].click();", unlockableContentButton)
+        time.sleep(0.5)
 
-        wait_css_selector("i[aria-label='Close']")
-        cross = driver.find_element_by_css_selector("i[aria-label='Close']")
-        cross.click()
-        time.sleep(1)
+        desc = driver.find_element_by_xpath('//*[@class="AssetForm--unlockable-content"]').find_element_by_tag_name('textarea')
+        desc.send_keys('this')
+        time.sleep(0.5)
 
-        main_page = driver.current_window_handle
-        wait_xpath('//*[@id="__next"]/div[1]/main/div/div/div[1]/div/span[2]/a')
-        sell = driver.find_element_by_xpath('//*[@id="__next"]/div[1]/main/div/div/div[1]/div/span[2]/a')
-        sell.click()
+        propertiesButton = driver.find_element_by_xpath('//*[@aria-label="Add properties"]')
+        propertiesButton.click()
 
-        wait_css_selector("input[placeholder='Amount']")
-        amount = driver.find_element_by_css_selector("input[placeholder='Amount']")
-        amount.send_keys(str(loop_price))
+        #create = driver.find_element_by_xpath('//*[@id="__next"]/div[1]/main/div/div/section/div[2]/form/div/div[1]/span/button')
+        #driver.execute_script("arguments[0].click();", create)
+        #time.sleep(1)
+        #
+        #wait_css_selector("i[aria-label='Close']")
+        #cross = driver.find_element_by_css_selector("i[aria-label='Close']")
+        #cross.click()
+        #time.sleep(1)
+        #
+        #main_page = driver.current_window_handle
+        #wait_xpath('//*[@id="__next"]/div[1]/main/div/div/div[1]/div/span[2]/a')
+        #sell = driver.find_element_by_xpath('//*[@id="__next"]/div[1]/main/div/div/div[1]/div/span[2]/a')
+        #sell.click()
+        #
+        #wait_css_selector("input[placeholder='Amount']")
+        #amount = driver.find_element_by_css_selector("input[placeholder='Amount']")
+        #amount.send_keys(str(loop_price))
 
-        wait_css_selector("button[type='submit']")
-        listing = driver.find_element_by_css_selector("button[type='submit']")
-        listing.click()
-        time.sleep(5)
-        
-        wait_css_selector("button[class='Blockreact__Block-sc-1xf18x6-0 Buttonreact__StyledButton-sc-glfma3-0 bhqEJb fzwDgL']")
-        sign = driver.find_element_by_css_selector("button[class='Blockreact__Block-sc-1xf18x6-0 Buttonreact__StyledButton-sc-glfma3-0 bhqEJb fzwDgL']")
-        sign.click()
-        time.sleep(2)
-        
-        for handle in driver.window_handles:
-            if handle != main_page:
-                login_page = handle
-        # change the control to signin page
-        driver.switch_to.window(login_page)
-        wait_css_selector("button[data-testid='request-signature__sign']")
-        sign = driver.find_element_by_css_selector("button[data-testid='request-signature__sign']")
-        sign.click()
-        time.sleep(1)
-        
-        # change control to main page
-        driver.switch_to.window(main_page)
-        time.sleep(1)
-
-        start_num = start_num + 1
-        print('NFT creation completed!')
+        time.sleep(120)
+        #wait_css_selector("button[type='submit']")
+        #listing = driver.find_element_by_css_selector("button[type='submit']")
+        #listing.click()
+        #time.sleep(5)
+        #
+        #wait_css_selector("button[class='Blockreact__Block-sc-1xf18x6-0 Buttonreact__StyledButton-sc-glfma3-0 bhqEJb fzwDgL']")
+        #sign = driver.find_element_by_css_selector("button[class='Blockreact__Block-sc-1xf18x6-0 Buttonreact__StyledButton-sc-glfma3-0 bhqEJb fzwDgL']")
+        #sign.click()
+        #time.sleep(2)
+        #
+        #for handle in driver.window_handles:
+        #    if handle != main_page:
+        #        login_page = handle
+        ## change the control to signin page
+        #driver.switch_to.window(login_page)
+        #wait_css_selector("button[data-testid='request-signature__sign']")
+        #sign = driver.find_element_by_css_selector("button[data-testid='request-signature__sign']")
+        #sign.click()
+        #time.sleep(1)
+        #
+        ## change control to main page
+        #driver.switch_to.window(main_page)
+        #time.sleep(1)
+        #
+        #start_num = start_num + 1
+        #print('NFT creation completed!')
 
 #####BUTTON ZONE#######
 button_save = tkinter.Button(root, width=20, text="Save Form", command=save) 
